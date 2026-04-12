@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import toast from 'react-hot-toast'
@@ -10,8 +10,15 @@ const Login = () => {
     const [password, setPassword] = useState('')
     const [showPassword, setShowPassword] = useState(false)
     const [loading, setLoading] = useState(false)
-    const { login } = useAuth()
+    const { login, isAuthenticated, user: authUser } = useAuth()
     const navigate = useNavigate()
+
+    // Redirect if already authenticated
+    useEffect(() => {
+        if (isAuthenticated && authUser) {
+            navigate(authUser.role === 'admin' ? '/admin/dashboard' : '/staff/dashboard', { replace: true })
+        }
+    }, [isAuthenticated, authUser, navigate])
 
     const handleSubmit = async (e) => {
         e.preventDefault()
@@ -28,7 +35,9 @@ const Login = () => {
         if (result.success) {
             toast.success('Login successful!')
             // Redirect based on role
-            navigate(result.user?.role === 'admin' ? '/admin/dashboard' : '/staff/dashboard')
+            const role = result.user?.role?.toLowerCase();
+            const redirectPath = role === 'admin' ? '/admin/dashboard' : '/staff/dashboard';
+            navigate(redirectPath, { replace: true });
         } else {
             toast.error(result.message || 'Login failed')
         }
