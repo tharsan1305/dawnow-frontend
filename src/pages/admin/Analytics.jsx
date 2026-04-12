@@ -340,18 +340,6 @@ const Analytics = () => {
         }
     };
 
-        // Signatures
-        const finalY = doc.lastAutoTable.finalY + 20;
-        doc.setFontSize(10);
-        doc.text('________________________', 20, finalY);
-        doc.text('Dean, R&D', 25, finalY + 6);
-        
-        doc.text('________________________', pageWidth - 70, finalY);
-        doc.text('Principal', pageWidth - 60, finalY + 6);
-
-        doc.save(`CFRD_Staff_Performance_${monthName}_${year}.pdf`);
-    };
-
     const handleDownloadExcel = () => {
         const monthName = months[filters.month - 1];
         const wb = XLSX.utils.book_new();
