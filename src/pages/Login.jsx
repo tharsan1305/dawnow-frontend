@@ -16,7 +16,12 @@ const Login = () => {
     // Redirect if already authenticated
     useEffect(() => {
         if (isAuthenticated && authUser) {
-            navigate(authUser.role === 'admin' ? '/admin/dashboard' : '/staff/dashboard', { replace: true })
+            const role = authUser.role?.toLowerCase();
+            if (role === 'admin') {
+                navigate('/admin', { replace: true });
+            } else {
+                navigate('/staff', { replace: true });
+            }
         }
     }, [isAuthenticated, authUser, navigate])
 
@@ -36,8 +41,11 @@ const Login = () => {
             toast.success('Login successful!')
             // Redirect based on role
             const role = result.user?.role?.toLowerCase();
-            const redirectPath = role === 'admin' ? '/admin/dashboard' : '/staff/dashboard';
-            navigate(redirectPath, { replace: true });
+            if (role === 'admin') {
+                navigate('/admin', { replace: true });
+            } else {
+                navigate('/staff', { replace: true });
+            }
         } else {
             toast.error(result.message || 'Login failed')
         }
