@@ -26,6 +26,8 @@ const DocumentVerification = lazy(() => import('./pages/admin/DocumentVerificati
 const BackupDashboard = lazy(() => import('./pages/admin/BackupDashboard'))
 const SystemSettings = lazy(() => import('./pages/admin/SystemSettings'))
 const DailyStatus = lazy(() => import('./pages/admin/DailyStatus'))
+const AdminChat = lazy(() => import('./pages/admin/AdminMessages'))
+const StaffChat = lazy(() => import('./pages/staff/StaffChat'))
 
 
 // Loading fallback component
@@ -71,6 +73,7 @@ function App() {
                     <Route path="informative" element={<Informative />} />
                     <Route path="profile" element={<Profile />} />
                     <Route path="success" element={<Success />} />
+                    <Route path="chat" element={<StaffChat />} />
                 </Route>
 
                 {/* Admin Routes */}
@@ -87,11 +90,11 @@ function App() {
                     <Route path="staff" element={<ManageStaff />} />
                     <Route path="questions" element={<TaskQuestions />} />
                     <Route path="pwd-requests" element={<PwdRequests />} />
-                    <Route path="messages" element={<SendMessages />} />
+                    <Route path="broadcast" element={<SendMessages />} />
                     <Route path="backup" element={<BackupDashboard />} />
                     <Route path="settings" element={<SystemSettings />} />
                     <Route path="daily-status" element={<DailyStatus />} />
-
+                    <Route path="chat" element={<AdminChat />} />
                 </Route>
 
                 {/* Default redirect */}

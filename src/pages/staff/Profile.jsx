@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { staffAPI, authAPI } from '../../api'
 import toast from 'react-hot-toast'
-import { User, Mail, Phone, Building, Calendar, Award, Lock, Eye, EyeOff, Camera, Save } from 'lucide-react'
+import { User, Mail, Phone, Building, Calendar, Award, Lock, Eye, EyeOff, Camera, Save, FileBadge, FileText, Download } from 'lucide-react'
 
 const Profile = () => {
     const { user, updateProfile } = useAuth()
@@ -226,6 +226,57 @@ const Profile = () => {
                         </button>
                     </div>
                 </form>
+            </div>
+
+            {/* Performance Certification (Feature 1 & 2) */}
+            <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                        <FileBadge size={18} className="text-primary-green" />
+                    </div>
+                    <div>
+                        <h2 className="text-lg font-heading font-semibold text-gray-800">Performance Recognition</h2>
+                        <p className="text-sm text-gray-500">Download your official CFRD performance documents</p>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="p-4 border border-green-100 bg-green-50/30 rounded-xl">
+                        <h3 className="font-bold text-gray-800 mb-2 flex items-center gap-2">
+                            <FileBadge size={16} className="text-primary-green" />
+                            Monthly Certificate
+                        </h3>
+                        <p className="text-xs text-gray-500 mb-4">Official certificate for research performance in {new Date().toLocaleString('default', { month: 'long' })} {new Date().getFullYear()}.</p>
+                        <button
+                            onClick={() => {
+                                const month = new Date().getMonth() + 1;
+                                const year = new Date().getFullYear();
+                                window.open(`${import.meta.env.VITE_API_URL}/certificates/${user._id}/${month}/${year}`, '_blank');
+                                toast.success("Downloading Certificate...");
+                            }}
+                            className="w-full flex items-center justify-center gap-2 py-2 bg-primary-green text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-bold"
+                        >
+                            <Download size={14} /> Download Certificate
+                        </button>
+                    </div>
+
+                    <div className="p-4 border border-blue-100 bg-blue-50/30 rounded-xl">
+                        <h3 className="font-bold text-gray-800 mb-2 flex items-center gap-2">
+                            <FileText size={16} className="text-blue-600" />
+                            Annual Summary Report
+                        </h3>
+                        <p className="text-xs text-gray-500 mb-4">Complete research summary report for the current academic year.</p>
+                        <button
+                            onClick={() => {
+                                window.open(`${import.meta.env.VITE_API_URL}/reports/staff-summary?staffId=${user._id}`, '_blank');
+                                toast.success("Generating Annual Report...");
+                            }}
+                            className="w-full flex items-center justify-center gap-2 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-bold"
+                        >
+                            <Download size={14} /> Download Annual Report
+                        </button>
+                    </div>
+                </div>
             </div>
 
             {/* Account Stats */}

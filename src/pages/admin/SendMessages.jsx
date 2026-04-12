@@ -16,7 +16,7 @@ const SendMessages = () => {
         priority: 'Normal',
         category: 'General',
         title: '',
-        content: '', // Notice model uses 'content' instead of 'message'
+        content: '',
         link: ''
     })
 
@@ -31,7 +31,6 @@ const SendMessages = () => {
     const fetchNotifications = async () => {
         setLoading(true)
         try {
-            // Fetch Notices (Announcements) instead of Notifications
             const [noticesRes, staffRes] = await Promise.all([
                 API.get('/notices/all'),
                 API.get('/admin/staff')
@@ -209,17 +208,18 @@ const SendMessages = () => {
                                 <th className="px-4 py-3 text-left text-[10px] font-black text-gray-500 uppercase tracking-widest">Announcement</th>
                                 <th className="px-4 py-3 text-left text-[10px] font-black text-gray-500 uppercase tracking-widest">Target</th>
                                 <th className="px-4 py-3 text-left text-[10px] font-black text-gray-500 uppercase tracking-widest">Priority</th>
+                                <th className="px-4 py-3 text-left text-[10px] font-black text-gray-500 uppercase tracking-widest">Readers</th>
                                 <th className="px-4 py-3 text-left text-[10px] font-black text-gray-500 uppercase tracking-widest">Date</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
                             {loading ? (
                                 <tr>
-                                    <td colSpan="5" className="px-4 py-8 text-center text-gray-500">Loading...</td>
+                                    <td colSpan="6" className="px-4 py-8 text-center text-gray-500">Loading...</td>
                                 </tr>
                             ) : notifications.length === 0 ? (
                                 <tr>
-                                    <td colSpan="5" className="px-4 py-8 text-center text-gray-500">No messages sent yet</td>
+                                    <td colSpan="6" className="px-4 py-8 text-center text-gray-500">No messages sent yet</td>
                                 </tr>
                             ) : (
                                 notifications.map((notification, index) => (
@@ -234,9 +234,12 @@ const SendMessages = () => {
                                         <td className="px-4 py-3 text-sm text-gray-600">
                                             {notification.targetType === 'All' ? '📢 All Staff' :
                                              notification.targetType === 'Department' ? `🏢 ${notification.targetDepartment}` :
-                                             `👤 Single Staff`}
+                                              `👤 Single Staff`}
                                         </td>
                                         <td className="px-4 py-3">{getPriorityBadge(notification.priority)}</td>
+                                        <td className="px-4 py-3 text-sm font-black text-primary-green">
+                                            {notification.readers?.length || 0} <span className="text-[10px] text-gray-400 font-bold uppercase ml-1">Reads</span>
+                                        </td>
                                         <td className="px-4 py-3 text-sm text-gray-600">
                                             {new Date(notification.createdAt).toLocaleString()}
                                         </td>

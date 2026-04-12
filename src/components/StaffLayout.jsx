@@ -13,7 +13,8 @@ import {
     Menu,
     X,
     ChevronRight,
-    AlertCircle
+    AlertCircle,
+    MessageSquare
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Header from './ui/Header'
@@ -25,6 +26,7 @@ const StaffLayout = () => {
     const navigate = useNavigate()
     const [sidebarOpen, setSidebarOpen] = useState(true)
     const [unreadCount, setUnreadCount] = useState(0)
+    const [unreadChatCount, setUnreadChatCount] = useState(0)
     const [prevCount, setPrevCount] = useState(0)
     const [hasSubmittedToday, setHasSubmittedToday] = useState(true)
     const [showReminder, setShowReminder] = useState(false)
@@ -135,6 +137,38 @@ const StaffLayout = () => {
         return () => clearInterval(interval)
     }, [])
 
+    useEffect(() => {
+        const fetchUnreadChats = async () => {
+            try {
+                const response = await API.get('/messages/unread/count')
+                setUnreadChatCount(response?.data?.count || 0)
+            } catch (error) {
+                console.error('Error fetching unread chat count:', error)
+            }
+        }
+
+        fetchUnreadChats()
+        const interval = setInterval(fetchUnreadChats, 15000)
+
+        const handleNewMessage = (msg) => {
+            fetchUnreadChats()
+            // Optional: toast for new message if not on chat page
+            if (window.location.pathname !== '/staff/chat') {
+                toast.success(`Admin: ${msg.message.substring(0, 30)}...`, {
+                    icon: '💬',
+                    position: 'bottom-right'
+                })
+            }
+        }
+
+        socket.on('new_message', handleNewMessage)
+
+        return () => {
+            clearInterval(interval)
+            socket.off('new_message')
+        }
+    }, [])
+
     const playNotificationSound = () => {
         try {
             // Try using Web Audio API first
@@ -178,6 +212,7 @@ const StaffLayout = () => {
         },
         { path: '/staff/view-report', icon: Eye, label: 'History' },
         { path: '/staff/informative', icon: Bell, label: 'Notifications', badge: unreadCount },
+        { path: '/staff/chat', icon: MessageSquare, label: 'Message Admin', badge: unreadChatCount },
         { path: '/staff/profile', icon: User, label: 'Profile' },
     ]
 

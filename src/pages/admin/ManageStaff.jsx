@@ -3,7 +3,7 @@ import { adminAPI } from '../../api'
 import Badge from '../../components/ui/Badge'
 import Modal from '../../components/ui/Modal'
 import toast from 'react-hot-toast'
-import { Plus, Search, Edit2, Trash2, ToggleLeft, ToggleRight } from 'lucide-react'
+import { Plus, Search, Edit2, Trash2, ToggleLeft, ToggleRight, FileBadge, Download, FileText } from 'lucide-react'
 
 const ManageStaff = () => {
     const [staff, setStaff] = useState([])
@@ -12,6 +12,18 @@ const ManageStaff = () => {
     const [modalOpen, setModalOpen] = useState(false)
     const [editingStaff, setEditingStaff] = useState(null)
     const [saving, setSaving] = useState(false)
+
+    const handleDownloadCert = (staffId) => {
+        const month = new Date().getMonth() + 1; // Current month
+        const year = new Date().getFullYear();
+        window.open(`${import.meta.env.VITE_API_URL}/certificates/${staffId}/${month}/${year}`, '_blank');
+        toast.success("Generating Monthly Certificate...");
+    };
+
+    const handleDownloadAnnualReport = (staffId) => {
+        window.open(`${import.meta.env.VITE_API_URL}/reports/staff-summary?staffId=${staffId}`, '_blank');
+        toast.success("Generating Annual Research Summary...");
+    };
 
     const [formData, setFormData] = useState({
         name: '',
@@ -104,9 +116,6 @@ const ManageStaff = () => {
 
     const handleToggle = async (id) => {
         try {
-            // Reusing updateStaff with a toggle flag or separate endpoint if needed
-            // For now, let's keep it simple as I didn't add toggle to adminAPI yet
-            // Actually, I should add it to adminAPI
             const res = await adminAPI.updateStaff(id, { toggleActive: true })
             toast.success(res.message || 'Status updated')
             fetchStaff()
@@ -193,6 +202,20 @@ const ManageStaff = () => {
                                         </td>
                                         <td className="px-4 py-3">
                                             <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => handleDownloadCert(member._id)}
+                                                    className="p-1 text-primary-green hover:bg-green-50 rounded"
+                                                    title="Monthly Certificate"
+                                                >
+                                                    <FileBadge size={18} />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDownloadAnnualReport(member._id)}
+                                                    className="p-1 text-purple-600 hover:bg-purple-50 rounded"
+                                                    title="Annual Research Report"
+                                                >
+                                                    <FileText size={18} />
+                                                </button>
                                                 <button
                                                     onClick={() => handleOpenModal(member)}
                                                     className="p-1 text-blue-600 hover:bg-blue-50 rounded"

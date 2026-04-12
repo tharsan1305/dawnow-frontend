@@ -135,6 +135,28 @@ const Dashboard = () => {
     return (
         <div className="space-y-6 pb-12 bg-[#f0fdf4] min-h-screen -m-6 p-6">
             
+            {/* Urgent Broadcast / Notice Banner (Feature 4) */}
+            {notices.find(n => n.priority === 'Urgent') && (
+                <div className="bg-red-600 text-white p-4 rounded-xl shadow-lg shadow-red-200 flex items-center justify-between animate-pulse">
+                    <div className="flex items-center gap-3">
+                        <div className="bg-white/20 p-2 rounded-lg">
+                            <AlertCircle size={24} />
+                        </div>
+                        <div>
+                            <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-0.5">Urgent Message from Admin</p>
+                            <h3 className="text-lg font-black tracking-tight uppercase">{notices.find(n => n.priority === 'Urgent').title}</h3>
+                            <p className="text-sm font-medium text-white/90 line-clamp-1">{notices.find(n => n.priority === 'Urgent').content}</p>
+                        </div>
+                    </div>
+                    <Link 
+                        to="/staff/informative" 
+                        className="px-6 py-2 bg-white text-red-600 font-black uppercase text-xs rounded-lg hover:bg-gray-100 transition-all shadow-md"
+                    >
+                        View Full Message
+                    </Link>
+                </div>
+            )}
+
             {/* Auto Approval Timer */}
             <div className={`p-4 rounded-xl shadow-sm font-bold flex items-center justify-center ${isAfterCutoff ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-primary-green text-white shadow-lg shadow-primary-green/20'}`}>
                 {isAfterCutoff ? (

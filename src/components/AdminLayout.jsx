@@ -20,7 +20,8 @@ import {
     FolderOpen,
     BarChart3,
     Settings,
-    UserX
+    UserX,
+    MessageSquare
 } from 'lucide-react'
 
 import Header from './ui/Header'
@@ -32,10 +33,12 @@ const AdminLayout = () => {
     const navigate = useNavigate()
     const [sidebarOpen, setSidebarOpen] = useState(true)
     const [pendingPwdRequests, setPendingPwdRequests] = useState(0)
+    const [unreadChats, setUnreadChats] = useState(0)
 
-    // Socket.IO connection for admin
     useEffect(() => {
-        connectSocket('admin')
+        if (user) {
+            connectSocket('admin', { userId: user._id })
+        }
 
         return () => {
             disconnectSocket()
@@ -57,6 +60,28 @@ const AdminLayout = () => {
         return () => clearInterval(interval)
     }, [])
 
+    useEffect(() => {
+        const fetchUnreadChats = async () => {
+            try {
+                const response = await API.get('/messages/unread/count')
+                setUnreadChats(response?.data?.count || 0)
+            } catch (error) {
+                console.error('Error fetching unread chats:', error)
+            }
+        }
+
+        fetchUnreadChats()
+        const interval = setInterval(fetchUnreadChats, 15000)
+        
+        // Listen for new messages via socket
+        socket.on('new_message', fetchUnreadChats)
+        
+        return () => {
+            clearInterval(interval)
+            socket.off('new_message')
+        }
+    }, [])
+
     const navItems = [
         { path: '/admin/dashboard', icon: LayoutDashboard, label: 'Overview' },
         { path: '/admin/daily-status', icon: UserX, label: 'Absent List' },
@@ -66,7 +91,8 @@ const AdminLayout = () => {
         { path: '/admin/staff', icon: Users, label: 'Manage Staff' },
         { path: '/admin/questions', icon: HelpCircle, label: 'Report Builder' },
         { path: '/admin/pwd-requests', icon: Key, label: 'Security', badge: pendingPwdRequests },
-        { path: '/admin/messages', icon: Bell, label: 'Announcements' },
+        { path: '/admin/broadcast', icon: Bell, label: 'Broadcast' },
+        { path: '/admin/chat', icon: MessageSquare, label: 'Messages', badge: unreadChats },
         { path: '/admin/settings', icon: Settings, label: 'System Settings' },
     ]
 
