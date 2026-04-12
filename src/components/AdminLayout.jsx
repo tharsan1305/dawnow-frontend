@@ -87,7 +87,6 @@ const AdminLayout = () => {
         { path: '/admin/daily-status', icon: UserX, label: 'Absent List' },
         { path: '/admin/analytics', icon: LineChart, label: 'Analytics' },
         { path: '/admin/reports', icon: FileText, label: 'Staff Reports' },
-        { path: '/admin/verification', icon: CheckSquare, label: 'Verification' },
         { path: '/admin/staff', icon: Users, label: 'Manage Staff' },
         { path: '/admin/questions', icon: HelpCircle, label: 'Report Builder' },
         { path: '/admin/pwd-requests', icon: Key, label: 'Security', badge: pendingPwdRequests },

@@ -22,7 +22,6 @@ const TaskQuestions = lazy(() => import('./pages/admin/TaskQuestions'))
 const PwdRequests = lazy(() => import('./pages/admin/PwdRequests'))
 const SendMessages = lazy(() => import('./pages/admin/SendMessages'))
 const Analytics = lazy(() => import('./pages/admin/Analytics'))
-const DocumentVerification = lazy(() => import('./pages/admin/DocumentVerification'))
 const BackupDashboard = lazy(() => import('./pages/admin/BackupDashboard'))
 const SystemSettings = lazy(() => import('./pages/admin/SystemSettings'))
 const DailyStatus = lazy(() => import('./pages/admin/DailyStatus'))
@@ -86,7 +85,6 @@ function App() {
                     <Route path="dashboard" element={<AdminDashboard />} />
                     <Route path="analytics" element={<Analytics />} />
                     <Route path="reports" element={<AllReports />} />
-                    <Route path="verification" element={<DocumentVerification />} />
                     <Route path="staff" element={<ManageStaff />} />
                     <Route path="questions" element={<TaskQuestions />} />
                     <Route path="pwd-requests" element={<PwdRequests />} />
