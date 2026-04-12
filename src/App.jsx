@@ -1,5 +1,6 @@
 import React, { Suspense, lazy } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
+import CFRDAssistant from './components/CFRDAssistant'
 import { useAuth } from './context/AuthContext'
 import Login from './pages/Login'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -99,6 +100,7 @@ function App() {
                 <Route path="/" element={<Navigate to="/login" replace />} />
                 <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>
+            <CFRDAssistant />
         </Suspense>
     )
 }

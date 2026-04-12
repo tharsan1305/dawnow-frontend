@@ -55,9 +55,8 @@ const StaffChat = () => {
 
     const fetchAdminAndMessages = async () => {
         try {
-            // Fetch all users with role admin
-            const usersRes = await adminAPI.getUsers();
-            const supportAdmin = usersRes.find(u => u.role === 'admin') || usersRes[0];
+            // Fetch support admin directly (no longer needs adminAPI.getUsers)
+            const supportAdmin = await messageAPI.getSupportAdmin();
             
             if (supportAdmin) {
                 setAdmin(supportAdmin);
@@ -68,7 +67,7 @@ const StaffChat = () => {
             }
             setLoading(false);
         } catch (err) {
-            console.error(err);
+            console.error('Chat Init Error:', err);
             setLoading(false);
         }
     };

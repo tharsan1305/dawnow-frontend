@@ -140,7 +140,7 @@ const StaffLayout = () => {
     useEffect(() => {
         const fetchUnreadChats = async () => {
             try {
-                const response = await API.get('/messages/unread/count')
+                const response = await API.get('/messages/unread-count')
                 setUnreadChatCount(response?.data?.count || 0)
             } catch (error) {
                 console.error('Error fetching unread chat count:', error)

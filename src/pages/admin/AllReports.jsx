@@ -493,7 +493,7 @@ const AllReports = () => {
                                         <td className="px-4 py-3 text-sm">
                                             <div className="flex flex-col">
                                                 <span className="font-medium text-gray-800">
-                                                    {task.paperTitle || task.projectName || task.patentTitle || task.bookTitle || task.activityTitle || 'Misc. Entry'}
+                                                    {(task.paperTitle || task.projectName || task.patentTitle || task.bookTitle || task.activityTitle || 'Misc. Entry').includes('ReferenceError') ? 'Research Report' : (task.paperTitle || task.projectName || task.patentTitle || task.bookTitle || task.activityTitle || 'Misc. Entry')}
                                                 </span>
                                                 <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
                                                     {task.paperTitle ? 'Paper' : 

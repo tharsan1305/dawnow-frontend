@@ -22,9 +22,9 @@ const DailyStatus = () => {
             // Handle both old and new response formats for maximum compatibility
             const normalizedData = {
                 summary: {
-                    total: data.totalStaff || data.summary?.total || 0,
-                    submitted: data.submittedCount || (Array.isArray(data.submitted) ? data.submitted.length : data.submitted) || data.summary?.submitted || 0,
-                    absent: data.absentCount || (Array.isArray(data.absent) ? data.absent.length : data.absent) || data.summary?.absent || 0
+                    total: data.totalStaff || data.summary?.total || (Array.isArray(data.allStaff) ? data.allStaff.length : 0) || 0,
+                    submitted: data.submittedCount || (Array.isArray(data.submitted) ? data.submitted.length : 0) || data.summary?.submitted || 0,
+                    absent: data.absentCount || (Array.isArray(data.absent) ? data.absent.length : 0) || data.summary?.absent || 0
                 },
                 submitted: data.submittedList || (Array.isArray(data.submitted) ? data.submitted : []),
                 absent: data.absentList || (Array.isArray(data.absent) ? data.absent : [])
@@ -34,7 +34,7 @@ const DailyStatus = () => {
         } catch (error) {
             console.error('Error fetching today status:', error)
             toast.error('Failed to load today\'s status')
-            // Fallback to empty state
+            // Fallback to empty state with 0s to prevent null reference errors
             setStatusData({
                 summary: { total: 0, submitted: 0, absent: 0 },
                 submitted: [],

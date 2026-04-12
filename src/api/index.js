@@ -121,7 +121,8 @@ export const messageAPI = {
     sendMessage: (data) => apiCall('/messages', 'POST', data),
     markAsRead: (userId) => apiCall(`/messages/read/${userId}`, 'PUT'),
     getAdminConversations: () => apiCall('/messages/conversations'),
-    getUnreadCount: () => apiCall('/messages/unread-count')
+    getUnreadCount: () => apiCall('/messages/unread-count'),
+    getSupportAdmin: () => apiCall('/messages/support-admin')
 };
 
 // ============ SYSTEM / MISC API ============
@@ -131,12 +132,26 @@ export const systemAPI = {
 };
 
 export const questionAPI = {
-    getActive: () => apiCall('/questions')
+    getActive: (params) => {
+        const query = new URLSearchParams(params || {}).toString();
+        return apiCall(`/questions?${query}`);
+    },
+    getAll: () => apiCall('/questions/all'),
+    create: (data) => apiCall('/questions', 'POST', data),
+    update: (id, data) => apiCall(`/questions/${id}`, 'PUT', data),
+    delete: (id) => apiCall(`/questions/${id}`, 'DELETE'),
+    reorder: (updates) => apiCall('/questions/reorder', 'PUT', { updates }),
+    seed: () => apiCall('/questions/seed', 'POST')
 };
 
 export const answerAPI = {
     submit: (data) => apiCall('/answers', 'POST', data),
     getByDate: (date) => apiCall(`/answers/${date}`)
+};
+
+// ============ AI API ============
+export const aiAPI = {
+    chat: (data) => apiCall('/ai/chat', 'POST', data)
 };
 
 // Aliases for compatibility

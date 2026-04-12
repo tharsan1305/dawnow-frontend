@@ -246,7 +246,7 @@ const Dashboard = () => {
                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary-green/5 rounded-full -mr-10 -mt-10"></div>
                 <div className="relative z-10">
                     <h1 className="text-3xl font-black text-[#1f2937] tracking-tight">
-                        Welcome back, <span className="text-[#16a34a]">Dr. {user?.name.split(' ')[0]}</span> 👋
+                        Welcome back, <span className="text-[#16a34a]">{user?.name && user.name.toLowerCase().startsWith('dr') ? '' : 'Dr. '}{user?.name || 'Researcher'}</span> 👋
                     </h1>
                     <div className="flex items-center mt-3 space-x-3 text-sm">
                         <span className="font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded-full">{format(today, 'EEEE, dd MMMM yyyy')}</span>
@@ -365,7 +365,7 @@ const Dashboard = () => {
                         )}
                     </div>
                     <div className="p-4 border-t border-slate-100 bg-slate-50 text-center">
-                        <Link to="/staff/daily-log" className="text-xs font-black text-primary-green hover:underline uppercase tracking-wider flex items-center justify-center">
+                        <Link to="/staff/view-report" className="text-xs font-black text-primary-green hover:underline uppercase tracking-wider flex items-center justify-center">
                             View All History <ArrowRight className="w-3 h-3 ml-1" />
                         </Link>
                     </div>
@@ -382,7 +382,7 @@ const Dashboard = () => {
                                 📝 Submit Today's Report
                             </Link>
                             <div className="grid grid-cols-2 gap-3">
-                                <Link to="/staff/daily-log" className="flex flex-col items-center justify-center p-3 border border-slate-200 rounded-lg hover:border-primary-green hover:bg-green-50 transition-all text-[#1f2937]">
+                                <Link to="/staff/view-report" className="flex flex-col items-center justify-center p-3 border border-slate-200 rounded-lg hover:border-primary-green hover:bg-green-50 transition-all text-[#1f2937]">
                                     <FileText className="w-5 h-5 mb-1 text-slate-500" />
                                     <span className="text-[10px] font-bold uppercase">📋 History</span>
                                 </Link>

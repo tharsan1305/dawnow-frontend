@@ -82,9 +82,10 @@ const TaskEntry = () => {
     useEffect(() => {
         const fetchQuestions = async () => {
             try {
-                const data = await questionAPI.getActive()
-                const questionsArray = data.questions || data || []
-                const grouped = data.grouped || {}
+                const response = await questionAPI.getActive()
+                // The new API returns { success: true, questions: [...], grouped: {...} }
+                const questionsArray = response.questions || []
+                const grouped = response.grouped || {}
 
                 setQuestions(questionsArray)
                 setGroupedQuestions(grouped)
@@ -92,10 +93,10 @@ const TaskEntry = () => {
                 // Initialize dynamic answers state
                 const initialAnswers = {}
                 questionsArray.forEach(q => {
-                    if (q.type === 'yesno') {
+                    if (q.fieldType === 'checkbox' || q.fieldType === 'mcq' || q.fieldType === 'select') {
+                        initialAnswers[q._id] = q.fieldType === 'checkbox' ? [] : ''
+                    } else if (q.fieldType === 'yesno') {
                         initialAnswers[q._id] = false
-                    } else if (q.type === 'checkbox' || q.type === 'mcq') {
-                        initialAnswers[q._id] = []
                     } else {
                         initialAnswers[q._id] = ''
                     }
@@ -109,13 +110,11 @@ const TaskEntry = () => {
         }
         
         const fetchSettings = async () => {
-
             try {
                 const res = await systemAPI.getSettings()
                 if (res && res.value) {
                     setCutoffTime(res.value)
                     
-                    // Check if current time is before cutoff
                     const [cutoffH, cutoffM] = res.value.split(':').map(Number)
                     const now = new Date()
                     const curH = now.getHours()
@@ -131,7 +130,6 @@ const TaskEntry = () => {
 
         fetchQuestions()
         fetchSettings()
-
 
         // Set current academic year
         const now = new Date()
@@ -245,15 +243,18 @@ const TaskEntry = () => {
 
     // Render input field based on type
     const renderInput = (type, field, value, onChange, options = [], placeholder = '') => {
+        const commonClasses = "w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-green focus:border-transparent transition-all hover:border-primary-green outline-none"
+        
         switch (type) {
             case 'dropdown':
+            case 'select':
                 return (
                     <select
                         value={value}
                         onChange={(e) => onChange(e.target.value)}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-green focus:border-transparent bg-white transition-all hover:border-primary-green"
+                        className={`${commonClasses} bg-white`}
                     >
-                        <option value="">Select...</option>
+                        <option value="">{placeholder || 'Select...'}</option>
                         {options.map(opt => (
                             <option key={opt} value={opt}>{opt}</option>
                         ))}
@@ -264,7 +265,7 @@ const TaskEntry = () => {
                     <DatePicker
                         selected={value ? new Date(value) : null}
                         onChange={(d) => onChange(d ? d.toISOString().split('T')[0] : '')}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-green focus:border-transparent"
+                        className={commonClasses}
                         dateFormat="dd/MM/yyyy"
                         placeholderText={placeholder || 'Select date'}
                     />
@@ -275,7 +276,7 @@ const TaskEntry = () => {
                         value={value}
                         onChange={(e) => onChange(e.target.value)}
                         placeholder={placeholder}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-green focus:border-transparent resize-none transition-all"
+                        className={`${commonClasses} resize-none`}
                         rows={3}
                     />
                 )
@@ -286,21 +287,86 @@ const TaskEntry = () => {
                         value={value}
                         onChange={(e) => onChange(e.target.value)}
                         placeholder={placeholder}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-green focus:border-transparent"
+                        className={commonClasses}
                         min={0}
                     />
+                )
+            case 'mcq':
+            case 'checkbox':
+                return (
+                    <div className="space-y-2 mt-2">
+                        {options.map(opt => (
+                            <label key={opt} className="flex items-center gap-3 cursor-pointer group">
+                                <input
+                                    type={type === 'mcq' ? 'radio' : 'checkbox'}
+                                    name={field}
+                                    checked={Array.isArray(value) ? value.includes(opt) : value === opt}
+                                    onChange={() => handleDynamicAnswerChange(field, opt, type)}
+                                    className="w-4 h-4 text-primary-green border-gray-300 focus:ring-primary-green"
+                                />
+                                <span className="text-sm text-gray-700 group-hover:text-primary-green transition-colors">{opt}</span>
+                            </label>
+                        ))}
+                    </div>
+                )
+            case 'yesno':
+                return (
+                    <div className="flex gap-6 mt-2">
+                        {['Yes', 'No'].map(opt => (
+                            <label key={opt} className="flex items-center gap-2 cursor-pointer group">
+                                <input
+                                    type="radio"
+                                    name={field}
+                                    checked={value === opt}
+                                    onChange={() => handleDynamicAnswerChange(field, opt, 'yesno')}
+                                    className="w-4 h-4 text-primary-green border-gray-300 focus:ring-primary-green"
+                                />
+                                <span className="text-sm text-gray-700">{opt}</span>
+                            </label>
+                        ))}
+                    </div>
                 )
             default:
                 return (
                     <input
-                        type="text"
-                        value={value}
-                        onChange={(e) => onChange(e.target.value)}
+                        type={type === 'file' ? 'file' : 'text'}
+                        value={type === 'file' ? '' : value}
+                        onChange={(e) => onChange(type === 'file' ? e.target.files[0] : e.target.value)}
                         placeholder={placeholder}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-green focus:border-transparent transition-all hover:border-primary-green"
+                        className={commonClasses}
                     />
                 )
         }
+    }
+
+    const renderDynamicFields = (section) => {
+        // Only render custom fields (not built-in) as those are hardcoded below for now
+        const sectionFields = (groupedQuestions[section] || []).filter(q => !q.isBuiltIn)
+        
+        if (sectionFields.length === 0) return null
+
+        return (
+            <div className="col-span-full mt-6 pt-6 border-t border-gray-50">
+                <p className="text-[10px] font-black text-primary-green uppercase tracking-widest mb-4">Additional Information</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    {sectionFields.map(q => (
+                        <div key={q._id} className={q.fieldType === 'textarea' ? 'col-span-full' : ''}>
+                            <label className="block text-sm font-bold text-gray-700 mb-2">
+                                {q.label} {q.isRequired && <span className="text-red-500">*</span>}
+                            </label>
+                            {renderInput(
+                                q.fieldType, 
+                                q._id, 
+                                dynamicAnswers[q._id], 
+                                (val) => handleDynamicAnswerChange(q._id, val, q.fieldType),
+                                q.options,
+                                q.placeholder
+                            )}
+                        </div>
+                    ))}
+                </div>
+            </div>
+        )
     }
 
     // Form validation
@@ -606,6 +672,7 @@ Powered by NexoraCrew
                             <label className="block text-sm font-medium text-gray-700 mb-2">Impact Factor</label>
                             {renderInput('number', 'impactFactor', formData.impactFactor, (v) => handleChange('impactFactor', v))}
                         </div>
+                        {renderDynamicFields('paper')}
                     </div>
                 </div>
 
@@ -640,6 +707,7 @@ Powered by NexoraCrew
                             <label className="block text-sm font-medium text-gray-700 mb-2">Funding Amount (Rs.)</label>
                             {renderInput('number', 'fundingAmount', formData.fundingAmount, (v) => handleChange('fundingAmount', v))}
                         </div>
+                        {renderDynamicFields('project')}
                     </div>
                 </div>
 
@@ -676,6 +744,7 @@ Powered by NexoraCrew
                             <label className="block text-sm font-medium text-gray-700 mb-2">Page Number</label>
                             {renderInput('text', 'pageNumber', formData.pageNumber, (v) => handleChange('pageNumber', v), [], 'Enter page number')}
                         </div>
+                        {renderDynamicFields('patent')}
                     </div>
                 </div>
 
@@ -712,6 +781,7 @@ Powered by NexoraCrew
                             <label className="block text-sm font-medium text-gray-700 mb-2">Published Year</label>
                             {renderInput('number', 'publishedYear', formData.publishedYear, (v) => handleChange('publishedYear', v))}
                         </div>
+                        {renderDynamicFields('book')}
                     </div>
                 </div>
 
@@ -740,6 +810,8 @@ Powered by NexoraCrew
                             <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
                             {renderInput('date', 'activityDate', formData.activityDate, (v) => handleChange('activityDate', v))}
                         </div>
+                        {renderDynamicFields('other')}
+                        {renderDynamicFields('activity')}
                     </div>
                 </div>
 

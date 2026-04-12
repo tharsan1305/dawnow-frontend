@@ -46,6 +46,23 @@ const ViewReport = () => {
         fetchTasks()
     }, [page, fromDate, toDate, statusFilter, typeFilter])
 
+    // Technical Error Residues Filter
+    const cleanText = (text) => {
+        if (!text) return 'N/A';
+        const errorPatterns = [
+            /ReferenceError:/gi,
+            /is not defined/gi,
+            /undefined/gi,
+            /\[object Object\]/gi,
+            /null/gi
+        ];
+        let cleaned = text;
+        errorPatterns.forEach(pattern => {
+            cleaned = cleaned.replace(pattern, '');
+        });
+        return cleaned.trim() || 'Research Activity Log';
+    };
+
     const handleDownloadPDF = () => {
         // Simple PDF export using standard library
         import('jspdf').then(({ default: jsPDF }) => {
@@ -60,7 +77,7 @@ const ViewReport = () => {
                 const tableData = tasks.map((t, i) => [
                     i + 1,
                     new Date(t.date).toLocaleDateString(),
-                    t.paperTitle || t.projectName || t.patentTitle || t.bookTitle || t.activityTitle || 'N/A',
+                    cleanText(t.paperTitle || t.projectName || t.patentTitle || t.bookTitle || t.activityTitle),
                     t.paperTitle ? 'Paper' : t.projectName ? 'Project' : t.patentTitle ? 'Patent' : t.bookTitle ? 'Book' : 'Activity',
                     t.status.toUpperCase()
                 ])
@@ -209,7 +226,7 @@ const ViewReport = () => {
                                         <td className="px-4 py-3 text-sm text-gray-800">
                                             <div className="flex flex-col">
                                                 <span className="font-semibold">
-                                                    {task.paperTitle || task.projectName || task.patentTitle || task.bookTitle || task.activityTitle || 'Research Entry'}
+                                                    {cleanText(task.paperTitle || task.projectName || task.patentTitle || task.bookTitle || task.activityTitle)}
                                                 </span>
                                                 <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
                                                     {task.paperTitle ? 'Paper' : 

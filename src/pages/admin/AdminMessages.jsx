@@ -208,13 +208,13 @@ const AdminMessages = () => {
                         <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-[#f0f2f5] custom-scrollbar">
                             <div className="flex flex-col space-y-3">
                                 {messages.map((msg, i) => {
-                                    // User wants Staff on RIGHT (Green) and Admin on LEFT (White)
-                                    const isStaff = msg.senderRole === 'staff';
+                                    // Admin View: Admin (Me) on RIGHT, Staff on LEFT
+                                    const isMe = msg.senderRole === 'admin';
                                     return (
-                                        <div key={msg._id} className={`flex ${isStaff ? 'justify-end' : 'justify-start'}`}>
+                                        <div key={msg._id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                                             <div className={`max-w-[70%] group relative`}>
                                                 <div className={`px-4 py-2 rounded-2xl text-sm font-medium shadow-sm leading-relaxed ${
-                                                    isStaff 
+                                                    isMe 
                                                     ? 'bg-[#dcfce7] text-gray-800 rounded-tr-none' 
                                                     : 'bg-white text-gray-800 rounded-tl-none border border-gray-100'
                                                 }`}>

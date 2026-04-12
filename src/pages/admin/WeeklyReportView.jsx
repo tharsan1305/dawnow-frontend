@@ -76,6 +76,11 @@ const WeeklyReportView = ({ onBack }) => {
         const p = phrase.trim();
         if (p.length < 3) return false;
         const low = p.toLowerCase();
+        
+        // Block technical error patterns
+        if (low.includes('referenceerror') || low.includes('is not defined') || low.includes('undefined')) return false;
+        if (low.includes('n:\\cfrd') || low.includes('routes.js')) return false;
+
         if (['ni', 'hi', 'ok', 'yes', 'no', 'ok.', 'nil', 'null'].includes(low)) return false;
         if (!/[a-zA-Z]/.test(p)) return false;
         return true;

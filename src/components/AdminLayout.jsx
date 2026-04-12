@@ -63,7 +63,7 @@ const AdminLayout = () => {
     useEffect(() => {
         const fetchUnreadChats = async () => {
             try {
-                const response = await API.get('/messages/unread/count')
+                const response = await API.get('/messages/unread-count')
                 setUnreadChats(response?.data?.count || 0)
             } catch (error) {
                 console.error('Error fetching unread chats:', error)
