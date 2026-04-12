@@ -25,7 +25,7 @@ export const AuthProvider = ({ children }) => {
                 try {
                     setUser(JSON.parse(storedUser))
                     // Verify token is still valid
-                    const response = await API.get('/auth/me')
+                    const response = await API.get('auth/me')
                     setUser(response.data)
                     localStorage.setItem('dawnow_user', JSON.stringify(response.data))
                 } catch (error) {
@@ -44,7 +44,7 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (username, password) => {
         try {
-            const response = await API.post('/auth/login', { username, password })
+            const response = await API.post('auth/login', { username, password })
             const { token: newToken, user: userData } = response.data
 
             localStorage.setItem('dawnow_token', newToken)
@@ -72,7 +72,7 @@ export const AuthProvider = ({ children }) => {
 
     const updateProfile = async (formData) => {
         try {
-            const response = await API.put('/auth/profile', formData, {
+            const response = await API.put('auth/profile', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             })
             const updatedUser = response.data
