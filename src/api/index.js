@@ -109,8 +109,19 @@ export const announcementAPI = {
 // ============ AUTH API ============
 export const authAPI = {
     login: (credentials) => apiCall('/auth/login', 'POST', credentials),
+    logout: () => apiCall('/auth/logout', 'POST'),
     getMe: () => apiCall('/auth/me'),
+    getProfile: () => apiCall('/auth/me'), // Alias
     updateProfile: (data) => apiCall('/auth/profile', 'PUT', data)
+};
+
+// ============ MESSAGES API ============
+export const messageAPI = {
+    getConversation: (userId) => apiCall(`/messages/${userId}`),
+    sendMessage: (data) => apiCall('/messages', 'POST', data),
+    markAsRead: (userId) => apiCall(`/messages/read/${userId}`, 'PUT'),
+    getAdminConversations: () => apiCall('/messages/conversations'),
+    getUnreadCount: () => apiCall('/messages/unread-count')
 };
 
 // ============ SYSTEM / MISC API ============

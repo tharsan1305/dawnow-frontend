@@ -1,55 +1,71 @@
-import { useState, useEffect, useRef } from 'react';
-import API from '../../api/axios';
-import { useAuth } from '../../context/AuthContext';
+import React, { useState, useEffect, useRef } from 'react';
+import { messageAPI, adminAPI } from '../../api';
 import { socket } from '../../socket';
-import { Send, User, MessageSquare, ArrowLeft } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { Send, MessageSquare, CheckCircle2, User, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Link } from 'react-router-dom';
 
 const StaffChat = () => {
     const { user } = useAuth();
+    const [admin, setAdmin] = useState(null);
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
-    const [admin, setAdmin] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [isTyping, setIsTyping] = useState(false);
     const messagesEndRef = useRef(null);
+    const typingTimeoutRef = useRef(null);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
 
     useEffect(() => {
-        fetchAdmin();
-        
-        socket.on('new_message', (msg) => {
-            setMessages(prev => [...prev, msg]);
-            scrollToBottom();
+        fetchAdminAndMessages();
+
+        socket.on('receive_message', (msg) => {
+            // Check if message is from admin to current staff
+            if (msg.senderRole === 'admin' && msg.receiverId._id === user._id) {
+                setMessages(prev => [...prev, msg]);
+                messageAPI.markAsRead(msg.senderId._id);
+                socket.emit('message_read', { senderId: msg.senderId._id, receiverId: user._id });
+                scrollToBottom();
+            }
         });
 
-        return () => socket.off('new_message');
-    }, []);
-
-    useEffect(scrollToBottom, [messages]);
-
-    const fetchAdmin = async () => {
-        try {
-            // Get the first admin available to chat
-            const res = await API.get('/admin/users');
-            const mainAdmin = res.data.find(u => u.role === 'admin' && u.isActive);
-            if (mainAdmin) {
-                setAdmin(mainAdmin);
-                fetchMessages(mainAdmin._id);
+        socket.on('user_typing', (data) => {
+            if (data.senderRole === 'admin') {
+                setIsTyping(data.typing);
             }
-        } catch (err) {
-            console.error(err);
-            setLoading(false);
-        }
-    };
+        });
 
-    const fetchMessages = async (adminId) => {
+        socket.on('message_seen', (data) => {
+            if (data.readerId === admin?._id) {
+                setMessages(prev => prev.map(m => m.senderRole === 'staff' ? { ...m, isRead: true } : m));
+            }
+        });
+
+        return () => {
+            socket.off('receive_message');
+            socket.off('user_typing');
+            socket.off('message_seen');
+        };
+    }, [admin, user._id]);
+
+    useEffect(scrollToBottom, [messages, isTyping]);
+
+    const fetchAdminAndMessages = async () => {
         try {
-            const res = await API.get(`/messages/${adminId}`);
-            setMessages(res.data);
+            // Fetch all users with role admin
+            const usersRes = await adminAPI.getUsers();
+            const supportAdmin = usersRes.find(u => u.role === 'admin') || usersRes[0];
+            
+            if (supportAdmin) {
+                setAdmin(supportAdmin);
+                const msgs = await messageAPI.getConversation(supportAdmin._id);
+                setMessages(msgs);
+                messageAPI.markAsRead(supportAdmin._id);
+                socket.emit('message_read', { senderId: supportAdmin._id, receiverId: user._id });
+            }
             setLoading(false);
         } catch (err) {
             console.error(err);
@@ -62,11 +78,11 @@ const StaffChat = () => {
         if (!newMessage.trim() || !admin) return;
 
         try {
-            const res = await API.post('/messages', {
+            const res = await messageAPI.sendMessage({
                 receiverId: admin._id,
                 message: newMessage.trim()
             });
-            setMessages(prev => [...prev, res.data]);
+            setMessages(prev => [...prev, res]);
             setNewMessage('');
             scrollToBottom();
         } catch (err) {
@@ -74,95 +90,123 @@ const StaffChat = () => {
         }
     };
 
-    if (loading) return <div className="p-8 text-center text-primary-green animate-pulse">Loading Chat Support...</div>;
+    const handleTyping = (e) => {
+        setNewMessage(e.target.value);
+        if (!admin) return;
+
+        socket.emit('typing', { receiverId: admin._id, senderId: user._id, typing: true });
+        
+        if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = setTimeout(() => {
+            socket.emit('typing', { receiverId: admin._id, senderId: user._id, typing: false });
+        }, 2000);
+    };
+
+    if (loading) {
+        return (
+            <div className="min-h-[60vh] flex flex-col items-center justify-center">
+                <div className="w-10 h-10 border-4 border-primary-green border-t-transparent rounded-full animate-spin"></div>
+                <p className="mt-4 text-gray-500 font-bold uppercase tracking-widest text-[10px]">Connecting to Administrator...</p>
+            </div>
+        );
+    }
 
     return (
-        <div className="max-w-4xl mx-auto h-[calc(100vh-140px)] flex flex-col bg-white rounded-2xl shadow-sm border border-[#bbf7d0] overflow-hidden">
+        <div className="max-w-4xl mx-auto h-[calc(100vh-160px)] flex flex-col bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden animate-in zoom-in-95 duration-300">
             {/* Header */}
-            <div className="p-5 border-b border-[#f0fdf4] bg-[#f0fdf4] flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                    <Link to="/staff/dashboard" className="p-2 border border-slate-200 rounded-lg bg-white text-slate-500 hover:text-slate-800 lg:hidden">
-                        <ArrowLeft size={18} />
-                    </Link>
-                    <div className="w-12 h-12 rounded-full bg-primary-green/10 flex items-center justify-center text-primary-green font-black border border-primary-green/20">
-                        A
-                    </div>
-                    <div>
-                        <h2 className="text-xl font-black text-slate-800 tracking-tight flex items-center">
-                            Chat with Admin
-                            <span className="w-2.5 h-2.5 rounded-full bg-green-500 ml-2 animate-pulse"></span>
-                        </h2>
-                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Center for Research and Development (CFRD) Support</p>
-                    </div>
+            <div className="p-5 border-b border-gray-100 flex items-center gap-4 bg-white/80 backdrop-blur-md sticky top-0 z-10">
+                <div className="w-12 h-12 bg-primary-green/10 rounded-full flex items-center justify-center text-primary-green font-black border border-primary-green/20">
+                    {admin?.name?.charAt(0) || 'A'}
                 </div>
-                <div className="hidden md:flex flex-col items-end">
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-tight">Active Session</p>
-                    <p className="text-[10px] font-black text-primary-green uppercase tracking-widest">Secure Messaging</p>
+                <div className="flex-1">
+                    <h2 className="text-xl font-black text-gray-800 tracking-tight leading-none mb-1">CFRD Administrator</h2>
+                    <p className="text-[10px] font-black text-primary-green uppercase tracking-widest flex items-center">
+                        <span className={`w-2 h-2 rounded-full mr-1.5 ${admin?.isActive ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-gray-400'}`}></span>
+                        {admin?.isActive ? 'Online Ready to assist' : 'Administrator Offline'}
+                    </p>
                 </div>
             </div>
 
-            {/* Messages List */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-5 bg-slate-50/10">
-                {messages.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center text-center p-8 opacity-40">
-                        <MessageSquare size={48} className="text-slate-200 mb-4" />
-                        <p className="text-sm font-bold text-slate-400 mb-1 uppercase tracking-widest">No previous messages</p>
-                        <p className="text-xs font-medium text-slate-400">Your conversation with the admin for support and queries.</p>
-                    </div>
-                ) : (
-                    messages.map((msg, i) => {
-                        const isMe = msg.senderRole === 'staff';
-                        return (
-                            <div key={msg._id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                                <div className={`max-w-[80%] md:max-w-[70%] group`}>
-                                    <div className={`px-5 py-3 rounded-2xl text-sm font-medium shadow-sm leading-relaxed transition-all transform hover:scale-[1.01] ${
-                                        isMe 
-                                        ? 'bg-primary-green text-white rounded-tr-none' 
-                                        : 'bg-white border border-slate-200 text-slate-800 rounded-tl-none ring-1 ring-slate-100'
-                                    }`}>
-                                        {msg.message}
-                                    </div>
-                                    <div className={`flex items-center gap-2 mt-1.5 ${isMe ? 'justify-end' : 'justify-start'}`}>
-                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter opacity-80">
-                                            {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                        </span>
-                                        {isMe && (
-                                            <span className={`text-[10px] font-black uppercase transition-opacity ${msg.isRead ? 'text-primary-green' : 'text-slate-300'}`}>
-                                                {msg.isRead ? '✓✓ Read' : '✓ Sent'}
-                                            </span>
-                                        )}
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-[#f0f2f5] custom-scrollbar">
+                <div className="flex flex-col space-y-3">
+                    {messages.length === 0 ? (
+                        <div className="text-center py-20 px-8">
+                            <div className="w-20 h-20 bg-primary-green/5 rounded-full flex items-center justify-center text-primary-green mx-auto mb-4">
+                                <MessageSquare size={40} className="opacity-40" />
+                            </div>
+                            <h3 className="text-lg font-black text-gray-800">Direct Support Line</h3>
+                            <p className="text-xs text-gray-400 font-bold uppercase tracking-widest max-w-xs mx-auto mt-2 leading-relaxed">
+                                Send a message to the CFRD administrator for any platform or research related queries.
+                            </p>
+                        </div>
+                    ) : (
+                        messages.map((msg, i) => {
+                            // User wants Staff on RIGHT (Green) and Admin on LEFT (White)
+                            // Here I am Staff, so I am on RIGHT.
+                            const isMe = msg.senderRole === 'staff';
+                            return (
+                                <div key={msg._id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                                    <div className={`max-w-[75%] group relative animate-in fade-in duration-300`}>
+                                        <div className={`px-4 py-2.5 rounded-2xl text-sm font-medium shadow-sm leading-relaxed ${
+                                            isMe 
+                                            ? 'bg-[#dcfce7] text-gray-800 rounded-tr-none' 
+                                            : 'bg-white text-gray-800 rounded-tl-none border border-gray-100 shadow-sm'
+                                        }`}>
+                                            {msg.message}
+                                            <div className="flex items-center justify-end gap-1 mt-1 text-[9px] font-bold text-gray-400 uppercase tracking-tighter">
+                                                <span>{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                {isMe && (
+                                                     <span className={`text-[12px] ml-1 ${msg.isRead ? 'text-blue-500' : 'text-gray-400'}`}>
+                                                        <CheckCircle2 size={12} />
+                                                     </span>
+                                                )}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        );
-                    })
-                )}
+                            );
+                        })
+                    )}
+                    {isTyping && (
+                        <div className="flex justify-start">
+                           <div className="bg-white px-4 py-2 rounded-2xl rounded-tl-none border border-gray-100 shadow-sm animate-pulse flex items-center gap-1.5">
+                               <div className="w-1 h-1 bg-gray-400 rounded-full animate-bounce"></div>
+                               <div className="w-1 h-1 bg-gray-400 rounded-full animate-bounce [animation-delay:0.2s]"></div>
+                               <div className="w-1 h-1 bg-gray-400 rounded-full animate-bounce [animation-delay:0.4s]"></div>
+                           </div>
+                        </div>
+                    )}
+                </div>
                 <div ref={messagesEndRef} />
             </div>
 
-            {/* Chat Input */}
-            <div className="p-5 bg-white border-t border-slate-100">
-                <form onSubmit={handleSendMessage} className="flex gap-4">
+            {/* Input */}
+            <div className="p-4 bg-white border-t border-gray-100 relative">
+                <form onSubmit={handleSendMessage} className="flex gap-2 items-center">
                     <input
                         type="text"
-                        placeholder="Describe your query or update..."
+                        placeholder="Type your message to administrator..."
                         value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
-                        className="flex-1 px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:bg-white focus:ring-4 focus:ring-primary-green/10 outline-none transition-all placeholder:text-slate-400"
+                        onChange={handleTyping}
+                        onKeyDown={(e) => { if(e.key === 'Enter' && !e.shiftKey) { handleSendMessage(e); }}}
+                        className="flex-1 px-5 py-4 bg-gray-50 border border-transparent rounded-2xl text-sm focus:bg-white focus:ring-4 focus:ring-primary-green/5 focus:border-primary-green outline-none transition-all font-medium"
                     />
                     <button
                         type="submit"
                         disabled={!newMessage.trim()}
-                        className="bg-primary-green text-white p-4 rounded-2xl hover:bg-green-700 shadow-xl shadow-green-100 disabled:opacity-50 transition-all transform active:scale-95 flex items-center justify-center w-14"
+                        className="bg-primary-green text-white p-4 rounded-2xl hover:bg-green-700 shadow-xl shadow-green-100 disabled:opacity-20 disabled:scale-95 active:scale-90 transition-all flex items-center justify-center shrink-0"
                     >
-                        <Send className="w-6 h-6" />
+                        <Send size={24} />
                     </button>
                 </form>
-                <p className="text-[10px] font-bold text-slate-400 text-center mt-3 uppercase tracking-widest flex items-center justify-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-slate-300 animate-bounce"></span>
-                    Admin typically responds within working hours
-                </p>
             </div>
+            <style jsx>{`
+                .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+                .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+            `}</style>
         </div>
     );
 };
